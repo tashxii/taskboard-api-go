@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// HandleErrorStatus sets http status and error response corresponding service.SvcError
+// SetErrorStatus sets http status and error response corresponding service.SvcError
 func SetErrorStatus(c *gin.Context, err error) {
 	serr, ok := err.(*service.SvcError)
 	if !ok {
