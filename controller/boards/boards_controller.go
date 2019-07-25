@@ -3,6 +3,7 @@ package boards
 import (
 	"net/http"
 	"taskboard-api-go/controller/api"
+	"taskboard-api-go/controller/websocket"
 	"taskboard-api-go/model"
 	"taskboard-api-go/orm"
 	"taskboard-api-go/service"
@@ -11,18 +12,26 @@ import (
 )
 
 type endPoint struct {
-	boards      string
-	boardid     string
-	boardtasks  string
-	boardorders string
-	taskorders  string
+	boards          string
+	boardid         string
+	boardtasks      string
+	boardorders     string
+	taskorders      string
+	taskboardFromID string
+	ws              *websocket.WsManager
 }
 
 // EndPoint presents boards endpoint
 var EndPoint = endPoint{
-	boards:      "/boards",
-	boardorders: "/boardorders",
-	boardid:     "boardid",
+	boards:          "/boards",
+	boardorders:     "/boardorders",
+	boardid:         "boardid",
+	taskboardFromID: "taskboard-from-id",
+}
+
+// SetWsManager sets websocket manager to EndPoint
+func SetWsManager(ws *websocket.WsManager) {
+	EndPoint.ws = ws
 }
 
 // RegisterRoute registers API endpoints for boards
@@ -73,6 +82,9 @@ func create(c *gin.Context) {
 
 	res := convertBoardResponse(board)
 	c.IndentedJSON(http.StatusOK, res)
+
+	// websocket send message
+	EndPoint.ws.SendUpdateBoardMessage(c.GetHeader(EndPoint.taskboardFromID))
 }
 
 // get a board
@@ -133,6 +145,9 @@ func update(c *gin.Context) {
 
 	res := convertBoardResponse(board)
 	c.IndentedJSON(http.StatusOK, res)
+
+	// websocket send message
+	EndPoint.ws.SendUpdateBoardMessage(c.GetHeader(EndPoint.taskboardFromID), board.ID)
 }
 
 // delete board
@@ -157,6 +172,9 @@ func delete(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusOK)
+
+	// websocket send message
+	EndPoint.ws.SendUpdateBoardMessage(c.GetHeader(EndPoint.taskboardFromID), find.ID, model.SystemBoardIcebox.ID)
 }
 
 // update order of all boards
@@ -180,4 +198,8 @@ func updateBoardOrders(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusOK)
+
+	// websocket send message
+	EndPoint.ws.SendUpdateBoardMessage(c.GetHeader(EndPoint.taskboardFromID))
+	EndPoint.ws.SendUpdateTaskBoardMessage(c.GetHeader(EndPoint.taskboardFromID))
 }

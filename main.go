@@ -8,12 +8,14 @@ import (
 	"taskboard-api-go/controller/boards"
 	"taskboard-api-go/controller/tasks"
 	"taskboard-api-go/controller/users"
+	"taskboard-api-go/controller/websocket"
 	"taskboard-api-go/model"
 	"taskboard-api-go/orm"
 	"taskboard-api-go/service"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"gopkg.in/olahol/melody.v1"
 )
 
 func main() {
@@ -64,6 +66,14 @@ func main() {
 	users.EndPoint.RegisterRoute(routeGroup)
 	boards.EndPoint.RegisterRoute(routeGroup)
 	tasks.EndPoint.RegisterRoute(routeGroup)
+	mrouter := melody.New()
+	ws := websocket.NewWsManager(mrouter)
+	users.SetWsManager(ws)
+	boards.SetWsManager(ws)
+	tasks.SetWsManager(ws)
+	router.GET("/taskboard/ws", func(c *gin.Context) {
+		mrouter.HandleRequest(c.Writer, c.Request)
+	})
 
 	// Set listening host:port
 	url := getListeningURL()

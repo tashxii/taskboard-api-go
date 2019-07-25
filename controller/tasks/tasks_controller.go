@@ -3,6 +3,7 @@ package tasks
 import (
 	"net/http"
 	"taskboard-api-go/controller/api"
+	"taskboard-api-go/controller/websocket"
 	"taskboard-api-go/model"
 	"taskboard-api-go/orm"
 	"taskboard-api-go/service"
@@ -11,18 +12,26 @@ import (
 )
 
 type endPoint struct {
-	tasks      string
-	taskorders string
-	taskid     string
-	boardid    string
+	tasks           string
+	taskorders      string
+	taskid          string
+	boardid         string
+	taskboardFromID string
+	ws              *websocket.WsManager
 }
 
 // EndPoint presents boards endpoint
 var EndPoint = endPoint{
-	tasks:      "/tasks",
-	taskorders: "/taskorders",
-	taskid:     "taskid",
-	boardid:    "boardid",
+	tasks:           "/tasks",
+	taskorders:      "/taskorders",
+	taskid:          "taskid",
+	boardid:         "boardid",
+	taskboardFromID: "taskboard-from-id",
+}
+
+// SetWsManager sets websocket manager to EndPoint
+func SetWsManager(ws *websocket.WsManager) {
+	EndPoint.ws = ws
 }
 
 // RegisterRoute registers API endpoints for tasks
@@ -77,6 +86,9 @@ func create(c *gin.Context) {
 
 	res := convertTaskResponse(task)
 	c.IndentedJSON(http.StatusOK, res)
+
+	// websocket send message
+	EndPoint.ws.SendUpdateTaskBoardMessage(c.GetHeader(EndPoint.taskboardFromID), task.BoardID)
 }
 
 func get(c *gin.Context) {
@@ -135,6 +147,9 @@ func update(c *gin.Context) {
 
 	res := convertTaskResponse(task)
 	c.IndentedJSON(http.StatusOK, res)
+
+	// websocket send message
+	EndPoint.ws.SendUpdateTaskMessage(c.GetHeader(EndPoint.taskboardFromID), task.ID)
 }
 
 func delete(c *gin.Context) {
@@ -158,6 +173,9 @@ func delete(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusOK)
+
+	// websocket send message
+	EndPoint.ws.SendUpdateTaskBoardMessage(c.GetHeader(EndPoint.taskboardFromID), find.BoardID)
 }
 
 // update order of tasks
@@ -183,4 +201,11 @@ func updateTaskOrders(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusOK)
+
+	// websocket send message
+	if req.FromBoardID == req.ToBoardID {
+		EndPoint.ws.SendUpdateTaskBoardMessage(c.GetHeader(EndPoint.taskboardFromID), req.FromBoardID)
+	} else {
+		EndPoint.ws.SendUpdateTaskBoardMessage(c.GetHeader(EndPoint.taskboardFromID), req.FromBoardID, req.ToBoardID)
+	}
 }
