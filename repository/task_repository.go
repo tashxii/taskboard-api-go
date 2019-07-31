@@ -114,7 +114,7 @@ func (repo *TaskRepository) UpdateTasks(tasks []*model.Task) (err error) {
 	for _, task := range tasks {
 		oldVersion := task.Version
 		task.Version++
-		db := repo.tx.Model(&model.Task{}).Where("version = ?", oldVersion).Updates(task)
+		db := repo.tx.Model(&model.Task{}).Where("version = ?", oldVersion).Save(task)
 		count := db.RowsAffected
 		err = db.Error
 		// return ErrorRecordNotFoud as optimistic lock error

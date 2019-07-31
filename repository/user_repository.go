@@ -102,7 +102,7 @@ func (repo *UserRepository) UpdateUsers(users []*model.User) (err error) {
 	for _, user := range users {
 		oldVersion := user.Version
 		user.Version++
-		db := repo.tx.Model(&model.User{}).Where("version = ?", oldVersion).Updates(user)
+		db := repo.tx.Model(&model.User{}).Where("version = ?", oldVersion).Save(user)
 		count := db.RowsAffected
 		err = db.Error
 		// return ErrorRecordNotFoud as optimistic lock error

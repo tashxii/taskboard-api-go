@@ -111,7 +111,7 @@ func (repo *BoardRepository) UpdateBoards(boards []*model.Board) (err error) {
 	for _, board := range boards {
 		oldVersion := board.Version
 		board.Version++
-		db := repo.tx.Model(&model.Board{}).Where("version = ?", oldVersion).Updates(board)
+		db := repo.tx.Model(&model.Board{}).Where("version = ?", oldVersion).Save(board)
 		count := db.RowsAffected
 		err = db.Error
 		// return ErrorRecordNotFoud as optimistic lock error
